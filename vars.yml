@@ -1,0 +1,12 @@
+---
+proxy_name: gfw-proxy
+ubuntu_version: trusty-14.04
+aws_region: cn-north-1
+aws_key_pair_name: "{{ proxy_name }}"
+aws_instance_name: "{{ proxy_name }}"
+aws_instance_type: t2.micro
+aws_security_group_name: "{{ proxy_name }}"
+aws_security_group_ingress_whitelist:
+  - 1.1.1.1  # Headquarters
+  - 2.2.2.2  # Tuscan Villa 
+  - 3.3.3.3  # Secret Lair

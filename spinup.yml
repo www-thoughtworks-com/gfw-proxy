@@ -1,0 +1,66 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars_files:
+    - vars.yml
+  tasks:
+
+  - ec2_key:
+      region: "{{ aws_region }}"
+      name: "{{ aws_key_pair_name }}"
+      state: present
+      wait: yes
+    register: key_pair
+
+  - copy: >
+      content="{{ key_pair.key.private_key }}"
+      dest="./{{ aws_key_pair_name }}.pem"
+      mode=0600
+      force=yes
+    when: key_pair | changed
+
+  - ec2_group:
+      region: "{{ aws_region }}"
+      name: "{{ aws_security_group_name }}"
+      description: 'All egress, whitelisted SSH ingress.'
+      purge_rules_egress: yes
+      purge_rules: no  # Not compatible with_items, additive only.
+      rules_egress: [{ proto: all, from_port: 0, to_port: 65535, cidr_ip: 0.0.0.0/0 }]
+      rules: [{ proto: tcp, from_port: 22, to_port: 22, cidr_ip: "{{ item }}/32" }]
+    with_items: "{{ aws_security_group_ingress_whitelist }}"
+
+  - ec2_ami_find:
+      region: "{{ aws_region }}"
+      name: "ubuntu/images/hvm-ssd/ubuntu-{{ ubuntu_version }}-amd64-server-20140927"
+      owner: "837727238323"
+      no_result_action: fail
+      state: available
+      sort: name
+      sort_order: descending
+      sort_end: 1
+    register: ami
+
+  - ec2:
+      region: "{{ aws_region }}"
+      image: "{{ ami.results[0].ami_id }}"
+      instance_type: "{{ aws_instance_type }}"
+      instance_tags: { Name: "{{ aws_instance_name }}" }
+      key_name: "{{ aws_key_pair_name }}"
+      group: "{{ aws_security_group_name }}"
+      tenancy: default
+      ebs_optimized: no
+      monitoring: no
+      exact_count: 1
+      count_tag: { Name: "{{ aws_instance_name }}" }
+      wait: yes
+    register: instance
+
+  - wait_for: >
+      host="{{ instance.tagged_instances[0].public_dns_name }}"
+      port=22
+      search_regex=OpenSSH
+      state=present
+      timeout=360
+
+  - debug: msg="{{ proxy_name }} = {{ instance.tagged_instances[0].public_dns_name }} ({{ instance.tagged_instances[0].public_ip }})"
