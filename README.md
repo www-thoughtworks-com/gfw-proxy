@@ -63,6 +63,8 @@ $ chromium --proxy-server='socks5://127.0.0.1:1080' http://whatismyipaddress.com
 
 In the interests of reducing costs, the proxy is a `t2.micro` instance, Amazon's cheapest instance type, which should be more than adequate.  However, you should also consider terminating the instance when not in use.  The `teardown.yml` playbook cleans up after `spinup.yml`.
 
+When an instance is terminated directly from aws , `teardown.yml' should be executed before we create a new instance.
+
 Play the `teardown.yml` playbook...
 
 ```shell
