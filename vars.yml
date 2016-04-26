@@ -8,5 +8,4 @@ aws_instance_type: t2.micro
 aws_security_group_name: "{{ proxy_name }}"
 aws_security_group_ingress_whitelist:
   - 85.199.228.26  # Manchester Office
-  - 2.2.2.2  # Tuscan Villa 
-  - 3.3.3.3  # Secret Lair
+  - 14.140.166.2   # Chennai office
